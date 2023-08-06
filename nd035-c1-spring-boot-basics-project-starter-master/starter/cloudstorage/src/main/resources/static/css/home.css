@@ -1,0 +1,8 @@
+.hidden-message{
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 30%;
+    z-index: 1;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
