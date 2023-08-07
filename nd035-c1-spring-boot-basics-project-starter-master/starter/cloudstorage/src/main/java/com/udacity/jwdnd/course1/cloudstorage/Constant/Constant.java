@@ -8,4 +8,6 @@ public class Constant {
     public static final String MSG_ERROR = "An error occurred during the processing";
     public static final String MSG_FILE_EXIST = "This file already exist!";
     public static final String MSG_FILE_UPLOAD_SUCCESS = "File upload successfully!";
+    public static final String MSG_FILE_LARGE = "File size too large, please select file smaller than 10MB";
+    public static final String MSG_NO_FILE = "Please choose file";
 }

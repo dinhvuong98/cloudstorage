@@ -36,6 +36,16 @@ public class FileController {
             RedirectView redirectView = new RedirectView("/home");
             int userId = userService.getUser(authentication.getName()).getUserId();
 
+            if (fileUpload == null) {
+                redirectAttributes.addFlashAttribute("error", Constant.MSG_NO_FILE);
+                return redirectView;
+            }
+
+            if (fileUpload.getSize() > 10 ){
+                redirectAttributes.addFlashAttribute("error", Constant.MSG_FILE_LARGE);
+                return redirectView;
+            }
+
             if (fileService.isExistFileName(userId, fileUpload.getOriginalFilename())) {
                 redirectAttributes.addFlashAttribute("error", Constant.MSG_FILE_EXIST);
                 return redirectView;
