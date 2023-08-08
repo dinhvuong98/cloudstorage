@@ -41,7 +41,7 @@ public class FileController {
                 return redirectView;
             }
 
-            if (fileUpload.getSize() > 10 ){
+            if (fileUpload.getSize() > 10000000 ){
                 redirectAttributes.addFlashAttribute("error", Constant.MSG_FILE_LARGE);
                 return redirectView;
             }

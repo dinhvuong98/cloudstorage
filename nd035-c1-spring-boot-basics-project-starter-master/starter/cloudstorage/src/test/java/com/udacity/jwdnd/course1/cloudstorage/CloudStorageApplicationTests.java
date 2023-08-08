@@ -16,6 +16,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 import java.io.File;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CloudStorageApplicationTests {
 
     @LocalServerPort
@@ -40,7 +41,8 @@ class CloudStorageApplicationTests {
         }
     }
 
-    @Test
+    @Test()
+    @Order(1)
     public void getLoginPage() {
         driver.get("http://localhost:" + this.port + "/login");
         Assertions.assertEquals("Login", driver.getTitle());
@@ -131,6 +133,7 @@ class CloudStorageApplicationTests {
      * https://review.udacity.com/#!/rubrics/2724/view
      */
     @Test
+    @Order(3)
     public void testRedirection() {
         // Create a test account
         doMockSignUp("Redirection", "Test", "RT", "123");
@@ -152,6 +155,7 @@ class CloudStorageApplicationTests {
      * https://attacomsian.com/blog/spring-boot-custom-error-page#displaying-custom-error-page
      */
     @Test
+    @Order(4)
     public void testBadUrl() {
         // Create a test account
         doMockSignUp("URL", "Test", "UT", "123");
@@ -176,6 +180,7 @@ class CloudStorageApplicationTests {
      * https://spring.io/guides/gs/uploading-files/ under the "Tuning File Upload Limits" section.
      */
     @Test
+    @Order(5)
     public void testLargeUpload() {
         // Create a test account
         doMockSignUp("Large File", "Test", "LFT", "123");
@@ -201,6 +206,7 @@ class CloudStorageApplicationTests {
     }
 
     @Test
+    @Order(2)
     public void testAuthentication() {
         // Write a test that verifies that an unauthorized user can only access the login and signup pages.
         driver.get("http://localhost:" + this.port + "/login");
@@ -212,8 +218,8 @@ class CloudStorageApplicationTests {
 
         //Write a test that signs up a new user, logs in, verifies that the home page is accessible, logs out,
         // and verifies that the home page is no longer accessible.
-        doMockSignUp("Tran", "Vuong", "Vuong001", "123");
-        doLogIn("Vuong001", "123");
+        doMockSignUp("Tran", "Vuong", "VuongTD2", "123");
+        doLogIn("VuongTD2", "123");
         Assertions.assertEquals("http://localhost:" + this.port + "/home", driver.getCurrentUrl());
 
         WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
@@ -260,10 +266,23 @@ class CloudStorageApplicationTests {
     }
 
     @Test
-    public void testForNote() {
-        doMockSignUp("Tran", "Vuong", "Vuong002", "123");
-        doLogIn("Vuong002", "123");
-        WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+    @Order(6)
+    public void testCreateNote() {
+        doLogIn("VuongTD2", "123");
+
+        NoteForm noteAfter = new NoteForm();
+        noteAfter.setNoteTitle("To do");
+        noteAfter.setNoteDescription("Design model");
+
+        doMockupNote(noteAfter, false);
+        Assertions.assertTrue(driver.getPageSource().contains(noteAfter.getNoteTitle()));
+        Assertions.assertTrue(driver.getPageSource().contains(noteAfter.getNoteDescription()));
+    }
+
+    @Test
+    @Order(7)
+    public void testEditNote() {
+        doLogIn("VuongTD2", "123");
 
         NoteForm noteAfter = new NoteForm();
         noteAfter.setNoteTitle("To do");
@@ -273,29 +292,42 @@ class CloudStorageApplicationTests {
         noteBefore.setNoteTitle("Config");
         noteBefore.setNoteDescription("Config spring security");
 
-        // Write a test that creates a note, and verifies it is displayed.
-        doMockupNote(noteAfter, false);
-
-        Assertions.assertTrue(driver.getPageSource().contains(noteAfter.getNoteTitle()));
-        Assertions.assertTrue(driver.getPageSource().contains(noteAfter.getNoteDescription()));
-
-        // Write a test that edits an existing note and verifies that the changes are displayed
         doMockupNote(noteBefore, true);
 
         Assertions.assertFalse(driver.getPageSource().contains(noteAfter.getNoteTitle()));
         Assertions.assertFalse(driver.getPageSource().contains(noteAfter.getNoteDescription()));
         Assertions.assertTrue(driver.getPageSource().contains(noteBefore.getNoteTitle()));
         Assertions.assertTrue(driver.getPageSource().contains(noteBefore.getNoteDescription()));
+    }
 
-        // Write a test that deletes a note and verifies that the note is no longer displayed.
+    @Test
+    @Order(8)
+    public void testDeleteNote() throws InterruptedException {
+        doLogIn("VuongTD2", "123");
+
+        WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("nav-notes-tab")));
+        WebElement focusTab = driver.findElement(By.id("nav-notes-tab"));
+        focusTab.click();
+
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#noteTable tbody tr th")));
+        String title = driver.findElement(By.cssSelector("#noteTable tbody tr th")).getText();
+
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#noteTable tbody tr td.row-data")));
+        String description = driver.findElement(By.cssSelector("#noteTable tbody tr td.row-data")).getText();
+
         webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#noteTable a")));
         WebElement deleteButton = driver.findElement(By.cssSelector("#noteTable a"));
         deleteButton.click();
 
-        Assertions.assertFalse(driver.getPageSource().contains(noteAfter.getNoteTitle()));
-        Assertions.assertFalse(driver.getPageSource().contains(noteAfter.getNoteDescription()));
-        Assertions.assertFalse(driver.getPageSource().contains(noteBefore.getNoteTitle()));
-        Assertions.assertFalse(driver.getPageSource().contains(noteAfter.getNoteDescription()));
+        Thread.sleep(2000);
+
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("nav-notes-tab")));
+        WebElement reFocusTab = driver.findElement(By.id("nav-notes-tab"));
+        reFocusTab.click();
+
+        Assertions.assertFalse(driver.getPageSource().contains(title));
+        Assertions.assertFalse(driver.getPageSource().contains(description));
     }
 
     public void doMockupCrendential(CredentialForm credentialForm, boolean isUpdate) {
@@ -353,10 +385,23 @@ class CloudStorageApplicationTests {
     }
 
     @Test
-    public void testForCredential() {
-        doMockSignUp("Tran", "Vuong", "Vuong003", "123");
-        doLogIn("Vuong003", "123");
-        WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+    @Order(9)
+    public void testCreateCredential() {
+        doLogIn("VuongTD2", "123");
+
+        CredentialForm credentialAfter = new CredentialForm();
+        credentialAfter.setUrl("http://localhost:8080/login");
+        credentialAfter.setUsername("admin001");
+        credentialAfter.setPassword("123");
+
+        doMockupCrendential(credentialAfter, false);
+        confirmCredentialSaveChanged(credentialAfter);
+    }
+
+    @Test
+    @Order(10)
+    public void testEditCredential() {
+        doLogIn("VuongTD2", "123");
 
         CredentialForm credentialAfter = new CredentialForm();
         credentialAfter.setUrl("http://localhost:8080/login");
@@ -368,13 +413,12 @@ class CloudStorageApplicationTests {
         credentialBefore.setUsername("user002");
         credentialBefore.setPassword("456");
 
-        // Write a test that creates a set of credentials, verifies that they are displayed,
-        // and verifies that the displayed password is encrypted.
-        doMockupCrendential(credentialAfter, false);
-        confirmCredentialSaveChanged(credentialAfter);
+        WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
 
-        //  Write a test that views an existing set of credentials, verifies that the viewable password is unencrypted,
-        //  edits the credentials, and verifies that the changes are displayed.
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("nav-credentials-tab")));
+        WebElement focusTab = driver.findElement(By.id("nav-credentials-tab"));
+        focusTab.click();
+
         webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#credentialTable button")));
         WebElement showModel = driver.findElement(By.cssSelector("#credentialTable button"));
         showModel.click();
@@ -386,15 +430,31 @@ class CloudStorageApplicationTests {
 
         doMockupCrendential(credentialBefore, true);
         confirmCredentialSaveChanged(credentialBefore);
+    }
 
-        // Write a test that deletes an existing set of credentials and verifies that the credentials are no longer displayed.
+    @Test
+    @Order(10)
+    public void testDeleteCrendential() {
+        doLogIn("VuongTD2", "123");
+
+        WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("nav-credentials-tab")));
+        WebElement focusTab = driver.findElement(By.id("nav-credentials-tab"));
+        focusTab.click();
+
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#credentialTable tbody tr th")));
+        String url = driver.findElement(By.cssSelector("#credentialTable tbody tr th")).getText();
+
+        webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#credentialTable tbody tr td:nth-child(3)")));
+        String userName = driver.findElement(By.cssSelector("#credentialTable tbody tr td:nth-child(3)")).getText();
+
         webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("#credentialTable a")));
         WebElement deleteButton = driver.findElement(By.cssSelector("#credentialTable a"));
         deleteButton.click();
 
-        Assertions.assertFalse(driver.getPageSource().contains(credentialAfter.getUrl()));
-        Assertions.assertFalse(driver.getPageSource().contains(credentialAfter.getUsername()));
-        Assertions.assertFalse(driver.getPageSource().contains(credentialBefore.getUrl()));
-        Assertions.assertFalse(driver.getPageSource().contains(credentialBefore.getUsername()));
+        Assertions.assertFalse(driver.getPageSource().contains(url));
+        Assertions.assertFalse(driver.getPageSource().contains(userName));
+
     }
 }
